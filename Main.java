@@ -50,7 +50,8 @@ public class Main {
 		System.out.println("Enter a message you want to hide in the image: ");
 		String msg = sc.nextLine();
 		// Hide it
-		int msgLen1 = makeEncryptedImage(msg);
+		int[] info = makeEncryptedImage(msg);
+		System.out.println(getMsgFromImage(info[0], info[1]));
 
 		// Get it back out
 		//String output = getMsgFromImage(msgLen1);
@@ -59,8 +60,9 @@ public class Main {
 
 
 	// Incorporates the encrypted message into a user selected image
-	public static int makeEncryptedImage(String msg) {
+	public static int[] makeEncryptedImage(String msg) {
 		int msgLength = 0;
+		int[] ret = new int[2];
 		try {
 			// Get the users chosen picture 
 			JFileChooser fc = new JFileChooser();
@@ -93,7 +95,7 @@ public class Main {
 			// Apparently the terminal truncates the characters if you do too much
 			System.out.println("num bytes in the mesg: " + msgLength);
 			
-			int upperbound = numBytes / 2;
+			int upperbound = START_BYTE + (numBytes / 2);
 			int lowerbound = START_BYTE + 1;
 
 			int start = (int)(Math.random() * ((upperbound - lowerbound) + 1) + lowerbound);
@@ -106,9 +108,10 @@ public class Main {
  			while (bytesLeft > 0)
  			{
 				//Change the byte in the image to a message byte
-				for (int i = start; i < end && (i + msgStart < msgLength); i++) 
+				for (int i = start; i < end && (msgStart < msgLength); i++) 
 				{
-					imageInByte[i] = (byte) (msgBytes[i + msgStart]);
+					imageInByte[i] = (byte) (msgBytes[msgStart]);
+					msgStart++;
 				}
 
 				// convert byte array back to BufferedImage
@@ -123,9 +126,6 @@ public class Main {
 
 				// BytesLeft is the number of bytes that still need to be written
 				bytesLeft -= numBytes - start; 
-				// This is the index in the message array that we have to start 
-				// for each image
-				msgStart += numBytes - start;
 				imageNum++;
 
 				// reset byte array of this image
@@ -134,18 +134,19 @@ public class Main {
 				baos.close();
  			}	
 
-
+			ret[0] = start;
+			ret[1] = msgLength;
 			System.out.println("Encryption done");			
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 		}
-		return msgLength;
+		return ret;
 	}
 
 	// Given a messages length and a user selected image returns the embedded
 	// encrypted message
-	public static String getMsgFromImage(int msgLength){
+	public static String getMsgFromImage(int start, int msgLength){
 		byte[] encrypted = null;
 		try {
 			// Get user selected file
@@ -165,9 +166,18 @@ public class Main {
 			baos.close();
 			encrypted = new byte[msgLength];
 			//Read the specified bytes from the image
-			for (int i = 0; i < msgLength; i++){
-				encrypted[i] = imageInByte[i + START_BYTE];
+			int charsRead = 0;
+			int i = start;
+			while(charsRead < msgLength && i < imageInByte.length) {
+				encrypted[charsRead] = imageInByte[i];
+				charsRead++;
+				i++;
 			}
+
+		//	for (int i = start; i < msgLength && i < imageInByte.length; i++){
+		//		System.out.println("")
+		//		encrypted[i] = imageInByte[i];
+		//	}
 
 
 		} catch (IOException e) {
