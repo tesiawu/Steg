@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -53,12 +52,9 @@ public class Main {
 		// Hide it
 		int msgLen1 = makeEncryptedImage(msg);
 
-
-
-
 		// Get it back out
-		String output = getMsgFromImage(msgLen1);
-		System.out.println(output);
+		//String output = getMsgFromImage(msgLen1);
+		//System.out.println(output);
 	}
 
 
@@ -82,15 +78,13 @@ public class Main {
 			// convert BufferedImage to byte array
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(originalImage, "bmp", baos);
+
 			baos.flush();
 			imageInByte = baos.toByteArray();
 			baos.close();
+			
 			byte[] msgBytes = msg.getBytes();
 			msgLength = msgBytes.length;
-
-
-
-
 
 			// What we started on
 	
@@ -98,42 +92,50 @@ public class Main {
 			System.out.println("num bytes in a picture: " + numBytes);
 			// Apparently the terminal truncates the characters if you do too much
 			System.out.println("num bytes in the mesg: " + msgLength);
-			BufferedImage[] images = new BufferedImage[(int) Math.ceil(1.0 * msgLength / numBytes)];
+			
+			int upperbound = numBytes / 2;
+			int lowerbound = START_BYTE + 1;
 
-			for (int i = 0; i < images.length; i++){
-				try {
-					images[i] = ImageIO.read(img);
-				} catch (IOException e){
-					System.out.println("Couldn't read.");
-					return -1;
+			int start = (int)(Math.random() * ((upperbound - lowerbound) + 1) + lowerbound);
+			int end = numBytes - start - 1;
+ 
+ 			int bytesLeft = msgLength;
+ 			int msgStart = 0;
+ 			int imageNum = 1;
+
+ 			while (bytesLeft > 0)
+ 			{
+				//Change the byte in the image to a message byte
+				for (int i = start; i < end && (i + msgStart < msgLength); i++) 
+				{
+					imageInByte[i] = (byte) (msgBytes[i + msgStart]);
 				}
-			}
-			System.out.println(images.length);
 
-			for(int i = 0; i < images.length; i++){
-				
-			}
+				// convert byte array back to BufferedImage
+				InputStream in = new ByteArrayInputStream(imageInByte);
+				if (in == null){
+					System.out.println("FAILED");
+				}
+				BufferedImage bImageFromConvert = ImageIO.read(in);
+				String filename = "Stegan" + imageNum + ".bmp";
+
+				ImageIO.write(bImageFromConvert, "bmp", new File(filename));
+
+				// BytesLeft is the number of bytes that still need to be written
+				bytesLeft -= numBytes - start; 
+				// This is the index in the message array that we have to start 
+				// for each image
+				msgStart += numBytes - start;
+				imageNum++;
+
+				// reset byte array of this image
+				baos.flush();
+				imageInByte = baos.toByteArray();
+				baos.close();
+ 			}	
 
 
-
-
-
-
-
-
-			//Change the byte in the image to a message byte
-			for (int i = 0; i < msgLength; i++) {
-				imageInByte[i + START_BYTE] = (byte) (msgBytes[i]); 
-			}
-
-			System.out.println();
-			// convert byte array back to BufferedImage
-			InputStream in = new ByteArrayInputStream(imageInByte);
-			if (in == null){
-				System.out.println("FAILED");
-			}
-			BufferedImage bImageFromConvert = ImageIO.read(in);
-			ImageIO.write(bImageFromConvert, "bmp", new File("Stegan.bmp"));
+			System.out.println("Encryption done");			
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
