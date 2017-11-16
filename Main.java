@@ -52,7 +52,11 @@ public class Main
 		String msg = sc.nextLine();
 
 		int[] info = makeEncryptedImage(msg);
-		
+		if(info == null) {
+			System.out.println("******Image too small.*******");
+			return;
+		}
+
 		System.out.println("Here is the key: " + info[0] + info[1]);
 
 		System.out.println("Would you like to decrypt a message? Enter Y or N:");
@@ -106,9 +110,8 @@ public class Main
 			msgLength = msgBytes.length;
 	
 			int numBytes = imageInByte.length - START_BYTE;
-			if(numBytes <= 0)
+			if(numBytes <= 0 || imageInByte.length - START_BYTE - msgLength < 0)
 			{
-				System.out.println("Image too small");
 				return null;
 			}
 			
@@ -192,8 +195,6 @@ public class Main
 			while(charsRead < msgLength && index < imageInByte.length)
 			{
 				encrypted[charsRead] = imageInByte[index];
-				if (index == start + 2) 
-					System.out.println("byte: " + imageInByte[index]);
 				charsRead++;
 				index++;
 			}
