@@ -40,20 +40,22 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * the data into pictures
  */
 
-public class Main {
-
+public class Main 
+{
 	private static final int START_BYTE = 200;
 	
 	// Main Runner method
-	public static void main(String[] args) {
+	public static void main(String[] args) 
+	{
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter a message you want to hide in the image: ");
 		String msg = sc.nextLine();
+		
 		// Hide it
-
 		ArrayList<String> images = new ArrayList<String> ();
 
 		int[] info = makeEncryptedImage(msg, images);
+		
 		System.out.println("Here is the key: " + info[0] + info[1]);
 
 		System.out.println("Would you like to decrypt a message? Enter Y or N:");
@@ -72,28 +74,25 @@ public class Main {
 		} else {
 			System.out.println("Ok. Good bye.");
 		}
-
-
-		// Get it back out
-		//String output = getMsgFromImage(msgLen1, images);
-		//System.out.println(output);
 	}
 
 
 	// Incorporates the encrypted message into a user selected image
-	public static int[] makeEncryptedImage(String msg, ArrayList<String> images) {
+	public static int[] makeEncryptedImage(String msg, ArrayList<String> images) 
+	{
 		int msgLength = 0;
 		int[] ret = new int[2];
-		try {
+		try 
+		{
 			// Get the users chosen picture 
 			JFileChooser fc = new JFileChooser();
 			FileNameExtensionFilter filter = new FileNameExtensionFilter(
-    			"JPG & GIF Images", "jpg", "gif");
+    			"JPG & GIF Images", "jpg", "gif", "png", "bmp", "jpeg");
 			fc.setFileFilter(filter);
 			fc.setDialogTitle("Select an image to use for encryption!");
 			int bs = fc.showOpenDialog(null);
-
 			File img = fc.getSelectedFile();
+			
 			byte[] imageInByte;
 			
 			BufferedImage originalImage = ImageIO.read(img);
@@ -108,19 +107,23 @@ public class Main {
 			
 			byte[] msgBytes = msg.getBytes();
 			msgLength = msgBytes.length;
-
-			// What we started on
 	
 			int numBytes = imageInByte.length - START_BYTE;
-			System.out.println("num bytes in a picture: " + numBytes);
+			if(numBytes <= 0)
+			{
+				System.out.println("Image too small");
+				return null;
+			}
+			System.out.println("num bytes in the picture: " + numBytes);
 			// Apparently the terminal truncates the characters if you do too much
 			System.out.println("num bytes in the mesg: " + msgLength);
 			
 			int upperbound = START_BYTE + (numBytes / 2);
 			int lowerbound = START_BYTE + 1;
 
-			int start = (int)(Math.random() * ((upperbound - lowerbound) + 1) + lowerbound);
-			int end = numBytes - start - 1;
+			//int start = (int)(Math.random() * ((upperbound - lowerbound) + 1) + lowerbound);
+			int start = lowerbound;
+			int end = numBytes;
  
  			int bytesLeft = msgLength;
  			int msgStart = 0;
@@ -131,8 +134,9 @@ public class Main {
 				//Change the byte in the image to a message byte
 				for (int i = start; i < end && (msgStart < msgLength); i++) 
 				{
-					imageInByte[i] = (byte) (msgBytes[msgStart]);
+					imageInByte[i] = msgBytes[msgStart];
 					msgStart++;
+					bytesLeft--;
 				}
 
 				// convert byte array back to BufferedImage
@@ -146,11 +150,12 @@ public class Main {
 
 				ImageIO.write(bImageFromConvert, "bmp", new File(filename));
 
-				// BytesLeft is the number of bytes that still need to be written
-				bytesLeft -= numBytes - start; 
 				imageNum++;
 
 				// reset byte array of this image
+				baos = new ByteArrayOutputStream();
+				ImageIO.write(originalImage, "bmp", baos);
+
 				baos.flush();
 				imageInByte = baos.toByteArray();
 				baos.close();
@@ -160,7 +165,10 @@ public class Main {
 			ret[1] = msgLength;
 			System.out.println("Encryption done");			
 
-		} catch (IOException e) {
+		} 
+
+		catch (IOException e) 
+		{
 			System.out.println(e.getMessage());
 		}
 		return ret;
@@ -168,25 +176,18 @@ public class Main {
 
 	// Given a messages length and a user selected image returns the embedded
 	// encrypted message
-	public static String getMsgFromImage(int start, int msgLength, ArrayList<String> images){
+	public static String getMsgFromImage(int start, int msgLength, ArrayList<String> images)
+	{
 		byte[] encrypted = null;
-		try {
-			// Get user selected file
-			//JFileChooser fc = new JFileChooser();
-			//int bs = fc.showOpenDialog(null);
-			//File img = fc.getSelectedFile();
+		try 
+		{
 			encrypted = new byte[msgLength];
-
-
-		//	for (int i = start; i < msgLength && i < imageInByte.length; i++){
-		//		System.out.println("")
-		//		encrypted[i] = imageInByte[i];
-		//	}
+			System.out.println(images.size());
 			int charsRead = 0;
-
 			for(int i=0; i < images.size(); i++) 
 			{
 				File img = new File(images.get(i));
+				
 				byte[] imageInByte;
 			
 				//Turn picture into BufferedImage object
@@ -201,19 +202,19 @@ public class Main {
 				//Read the specified bytes from the image
 				
 				int index = start;
-				while(charsRead < msgLength && index < imageInByte.length) {
+				while(charsRead < msgLength && index < imageInByte.length)
+				{
 					encrypted[charsRead] = imageInByte[index];
 					charsRead++;
 					index++;
 				}
-				
 			}
+		} 
 
-		} catch (IOException e) {
+		catch (IOException e) 
+		{
 			System.out.println(e.getMessage());
 		}
 		return new String(encrypted);
 	}
-
-	
 }
