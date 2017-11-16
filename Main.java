@@ -50,17 +50,38 @@ public class Main {
 		System.out.println("Enter a message you want to hide in the image: ");
 		String msg = sc.nextLine();
 		// Hide it
-		int[] info = makeEncryptedImage(msg);
-		System.out.println(getMsgFromImage(info[0], info[1]));
+
+		ArrayList<String> images = new ArrayList<String> ();
+
+		int[] info = makeEncryptedImage(msg, images);
+		System.out.println("Here is the key: " + info[0] + info[1]);
+
+		System.out.println("Would you like to decrypt a message? Enter Y or N:");
+		String answer = sc.nextLine();
+
+		if(answer.equals("Y") || answer.equals("y")) {
+			System.out.println("Enter the key for this image:");
+			String key = sc.nextLine();
+			if(key.equals("" + info[0] + info[1])) {
+				// Decrypt logic here
+
+				System.out.println(getMsgFromImage(info[0], info[1], images));
+			} else {
+				System.out.println("Wrong key. Good bye.");
+			}
+		} else {
+			System.out.println("Ok. Good bye.");
+		}
+
 
 		// Get it back out
-		//String output = getMsgFromImage(msgLen1);
+		//String output = getMsgFromImage(msgLen1, images);
 		//System.out.println(output);
 	}
 
 
 	// Incorporates the encrypted message into a user selected image
-	public static int[] makeEncryptedImage(String msg) {
+	public static int[] makeEncryptedImage(String msg, ArrayList<String> images) {
 		int msgLength = 0;
 		int[] ret = new int[2];
 		try {
@@ -121,6 +142,7 @@ public class Main {
 				}
 				BufferedImage bImageFromConvert = ImageIO.read(in);
 				String filename = "Stegan" + imageNum + ".bmp";
+				images.add(filename);
 
 				ImageIO.write(bImageFromConvert, "bmp", new File(filename));
 
@@ -146,39 +168,46 @@ public class Main {
 
 	// Given a messages length and a user selected image returns the embedded
 	// encrypted message
-	public static String getMsgFromImage(int start, int msgLength){
+	public static String getMsgFromImage(int start, int msgLength, ArrayList<String> images){
 		byte[] encrypted = null;
 		try {
 			// Get user selected file
-			JFileChooser fc = new JFileChooser();
-			int bs = fc.showOpenDialog(null);
-			File img = fc.getSelectedFile();
-			byte[] imageInByte;
-			
-			//Turn picture into BufferedImage object
-			BufferedImage originalImage = ImageIO.read(img);
-
-			// convert BufferedImage to byte array
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ImageIO.write(originalImage, "bmp", baos);
-			baos.flush();
-			imageInByte = baos.toByteArray();
-			baos.close();
+			//JFileChooser fc = new JFileChooser();
+			//int bs = fc.showOpenDialog(null);
+			//File img = fc.getSelectedFile();
 			encrypted = new byte[msgLength];
-			//Read the specified bytes from the image
-			int charsRead = 0;
-			int i = start;
-			while(charsRead < msgLength && i < imageInByte.length) {
-				encrypted[charsRead] = imageInByte[i];
-				charsRead++;
-				i++;
-			}
+
 
 		//	for (int i = start; i < msgLength && i < imageInByte.length; i++){
 		//		System.out.println("")
 		//		encrypted[i] = imageInByte[i];
 		//	}
+			int charsRead = 0;
 
+			for(int i=0; i < images.size(); i++) 
+			{
+				File img = new File(images.get(i));
+				byte[] imageInByte;
+			
+				//Turn picture into BufferedImage object
+				BufferedImage originalImage = ImageIO.read(img);
+
+				// convert BufferedImage to byte array
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ImageIO.write(originalImage, "bmp", baos);
+				baos.flush();
+				imageInByte = baos.toByteArray();
+				baos.close();
+				//Read the specified bytes from the image
+				
+				int index = start;
+				while(charsRead < msgLength && index < imageInByte.length) {
+					encrypted[charsRead] = imageInByte[index];
+					charsRead++;
+					index++;
+				}
+				
+			}
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
